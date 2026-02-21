@@ -1,0 +1,242 @@
+{% comment %} 
+
+
+{% extends "starter_template/starter.html" %}
+{% load static %}
+
+{% block title %}
+    Real Time Chat
+{% endblock %}
+
+    {% block content %}
+
+    {% for messages in messages %}
+        {{i.message}}
+    {% endfor %}
+        
+        <div class="container mt-5">
+            <div class="card shadow" style="max-width: 600px; margin: auto;">
+                <div class="card-header bg-dark text-white">🩺 HealthBot</div>
+                <div class="card-body chat-box" id="chat-box"></div>
+                <div class="card-footer">
+                    <form id="chat-form" class="d-flex">
+                        <input type="text" id="message-input" class="form-control doc" placeholder="Type a message..." required>
+                        <button type="submit" class="btn btn-success ms-2">Send</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    {% endblock %}
+     {% endcomment %}
+    {% load static %}
+     <!DOCTYPE html>
+<html>
+<head>
+    <title>Chat with {{ other_user.username }}</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background: #e5ddd5;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .chat-container {
+            width: 700px;
+            max-width: 100%;
+            height: 600px;
+            background: #fff;
+            display: flex;
+            flex-direction: column;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+
+        .chat-header {
+            background: #075E54;
+            color: #fff;
+            padding: 15px;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        #chat-box {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            background: #ece5dd;
+        }
+
+        .message {
+            padding: 10px 14px;
+            margin: 5px 0;
+            border-radius: 20px;
+            max-width: 70%;
+            position: relative;
+            word-wrap: break-word;
+            clear: both;
+        }
+
+        .sent {
+            background: #dcf8c6;
+            margin-left: auto;
+            text-align: right;
+            border-bottom-right-radius: 0;
+        }
+
+        .received {
+            background: #fff;
+            margin-right: auto;
+            text-align: left;
+            border-bottom-left-radius: 0;
+        }
+
+        .timestamp {
+            font-size: 10px;
+            color: #999;
+            margin-top: 4px;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+        }
+
+        .tick {
+            margin-left: 5px;
+            font-size: 12px;
+        }
+
+        .read {
+            color: #4fc3f7;
+        }
+
+        .chat-input {
+            display: flex;
+            padding: 10px;
+            border-top: 1px solid #ddd;
+            background: #f0f0f0;
+        }
+
+        .chat-input input {
+            flex: 1;
+            padding: 10px;
+            border-radius: 20px;
+            border: 1px solid #ccc;
+            outline: none;
+            font-size: 14px;
+        }
+
+        .chat-input button {
+            margin-left: 10px;
+            padding: 10px 16px;
+            background: #075E54;
+            color: #fff;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        /* Scrollbar style */
+        #chat-box::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        #chat-box::-webkit-scrollbar-thumb {
+            background-color: rgba(0,0,0,0.2);
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header"><img src="{% static 'images/avatar.png' %}" style="width:5%" class="img-fluid">{{ other_user.username }}</div>
+        <div id="chat-box">
+            {% for msg in messages %}
+                <div class="message {% if msg.sender == request.user %}sent{% else %}received{% endif %}" data-id="{{ msg.id }}">
+                    {{ msg.message }}
+                    <div class="timestamp">
+                        {{ msg.timestamp|date:"H:i" }}
+                        {% if msg.sender == request.user %}
+                            <span class="tick {% if msg.is_read %}read{% endif %}">
+                                {% if msg.is_read %}✓✓{% else %}✓{% endif %}
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+            {% empty %}
+                <p style="text-align:center; color:#666;">No messages yet. Say hi!</p>
+            {% endfor %}
+        </div>
+
+        <div class="chat-input">
+            <input type="text" id="msg-input" placeholder="Type a message" />
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <!-- Keep your JS unchanged -->
+    <script>
+        const other_user_id = "{{ other_user.id }}";
+        const current_user_id = "{{ request.user.id }}";
+
+        const ws = new WebSocket(
+            'ws://' + window.location.host + '/ws/chat/' + other_user_id + '/'
+        );
+
+        const chatBox = document.getElementById("chat-box");
+
+        ws.onmessage = (e) => {
+            const data = JSON.parse(e.data);
+            if (data.type === "message") addMessage(data);
+            if (data.type === "delivered") markDelivered(data.message_id);
+            if (data.type === "read") markRead(data.message_id);
+        };
+
+        function sendMessage() {
+            const input = document.getElementById("msg-input");
+            const msg = input.value.trim();
+            if (!msg) return;
+            ws.send(JSON.stringify({ message: msg }));
+            input.value = "";
+        }
+
+        function addMessage(data) {
+            const div = document.createElement("div");
+            const isMine = data.sender_id == current_user_id;
+            div.className = "message " + (isMine ? "sent" : "received");
+            div.setAttribute("data-id", data.message_id);
+
+            let ticks = "";
+            if (isMine) {
+                ticks = `<span class="tick">${data.is_delivered ? "✓✓" : "✓"}</span>`;
+            }
+
+            div.innerHTML = `${data.message}<div class="timestamp">${data.timestamp} ${ticks}</div>`;
+            chatBox.appendChild(div);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function markDelivered(messageId) {
+            const msg = document.querySelector(`[data-id='${messageId}']`);
+            if (!msg) return;
+            const tick = msg.querySelector(".tick");
+            if (!tick) return;
+            tick.innerHTML = "✓✓";
+        }
+
+        function markRead(messageId) {
+            const msg = document.querySelector(`[data-id='${messageId}']`);
+            if (!msg) return;
+            const tick = msg.querySelector(".tick");
+            if (!tick) return;
+            tick.innerHTML = "✓✓";
+            tick.classList.add("read");
+        }
+    </script>
+</body>
+</html>

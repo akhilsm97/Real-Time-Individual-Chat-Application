@@ -1,0 +1,6 @@
+.status-dot {
+  width: 34px;   /* was 8px */
+  height: 34px;  /* was 8px */
+  border-radius: 50%;
+  margin-right: 6px;
+}

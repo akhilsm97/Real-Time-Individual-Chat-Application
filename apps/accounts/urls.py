@@ -1,14 +1,11 @@
-from accounts.views import CustomUserRegistrationView, LoginView, CookieTokenRefreshView,LogoutView
-from django.urls import include, path
-from rest_framework.routers import DefaultRouter
+from django.urls import path
 
 from . import views
 
-router = DefaultRouter()
-router.register("user_register/", CustomUserRegistrationView, basename="user_register")
+app_name = "accounts"
+
 urlpatterns = [
-    path("api/", include(router.urls)),
-    path("login/", LoginView.as_view()),
-    path("refresh-token/", CookieTokenRefreshView.as_view(), name="token-refresh"),
-    path("logout/", LogoutView.as_view(), name="logout"),
+    path("register/", views.register_view, name="register"),
+    path("login/", views.login_view, name="login"),
+    path("logout/", views.logout_view, name="logout"),
 ]
