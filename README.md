@@ -171,6 +171,4 @@ Akhil S
 
 ---
 
-# License
 
-This project is open source and created for learning purposes.
