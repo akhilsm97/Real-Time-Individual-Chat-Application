@@ -30,7 +30,7 @@ AUTH_USER_MODEL = "accounts.CustomUser"
 SECRET_KEY = "django-insecure-8p0-af1hk&-$(enw2vtzz&ko8x24kfiier1y@zls^if*)ankq8"
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['*']
 CSRF_TRUSTED_ORIGINS = [
