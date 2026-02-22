@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 
-python manage.py migrate
 python manage.py collectstatic --noinput
-daphne -b 0.0.0.0 -p 10000 chat_project.asgi:application
+python manage.py migrate
+daphne -b 0.0.0.0 -p $PORT chat_project.asgi:application
