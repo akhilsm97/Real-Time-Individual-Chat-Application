@@ -138,7 +138,17 @@ Open in browser:
 ```
 http://127.0.0.1:8000
 ```
-
+## Test Credentials 
+```bash
+User 1:
+username: test1
+password: test1@123
+```
+```bash
+User 2:
+username: test2
+password: test2@123
+```
 ---
 
 # Testing Real-Time Chat
