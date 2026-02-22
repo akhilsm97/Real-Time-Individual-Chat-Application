@@ -3,7 +3,7 @@ import json
 from accounts.models import CustomUser
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
-from apps.chat_app.models import Message
+from chat_app.models import Message
 from django.contrib.auth.models import AnonymousUser
 from django.utils.timezone import now
 
