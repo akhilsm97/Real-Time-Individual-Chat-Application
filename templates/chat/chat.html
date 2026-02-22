@@ -184,9 +184,8 @@
         const other_user_id = "{{ other_user.id }}";
         const current_user_id = "{{ request.user.id }}";
 
-        const ws = new WebSocket(
-            'ws://' + window.location.host + '/ws/chat/' + other_user_id + '/'
-        );
+        const protocol = window.location.protocol === "https:" ? "wss://" : "ws://";
+        const ws = new WebSocket(protocol + window.location.host + "/ws/chat/" + roomId + "/");
 
         const chatBox = document.getElementById("chat-box");
 
