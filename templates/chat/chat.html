@@ -181,61 +181,99 @@
 
     <!-- Keep your JS unchanged -->
     <script>
-        const other_user_id = "{{ other_user.id }}";
-        const current_user_id = "{{ request.user.id }}";
+    const other_user_id = "{{ other_user.id }}";
+    const current_user_id = "{{ request.user.id }}";
 
-        const protocol = window.location.protocol === "https:" ? "wss://" : "ws://";
-        const ws = new WebSocket(protocol + window.location.host + "/ws/chat/" + roomId + "/");
+    const roomId = other_user_id;
 
-        const chatBox = document.getElementById("chat-box");
+    const protocol = window.location.protocol === "https:" ? "wss://" : "ws://";
+    let ws = new WebSocket(protocol + window.location.host + "/ws/chat/" + roomId + "/");
 
-        ws.onmessage = (e) => {
-            const data = JSON.parse(e.data);
-            if (data.type === "message") addMessage(data);
-            if (data.type === "delivered") markDelivered(data.message_id);
-            if (data.type === "read") markRead(data.message_id);
-        };
+    const chatBox = document.getElementById("chat-box");
 
-        function sendMessage() {
-            const input = document.getElementById("msg-input");
-            const msg = input.value.trim();
-            if (!msg) return;
-            ws.send(JSON.stringify({ message: msg }));
-            input.value = "";
+    ws.onopen = () => {
+        console.log("WebSocket connected");
+    };
+
+    ws.onmessage = (e) => {
+        const data = JSON.parse(e.data);
+
+        if (data.type === "message") addMessage(data);
+        if (data.type === "delivered") markDelivered(data.message_id);
+        if (data.type === "read") markRead(data.message_id);
+    };
+
+    ws.onclose = () => {
+        console.log("WebSocket closed");
+    };
+
+    function sendMessage() {
+        const input = document.getElementById("msg-input");
+        const msg = input.value.trim();
+
+        if (!msg) return;
+
+        if (ws.readyState !== WebSocket.OPEN) {
+            console.log("WebSocket not ready");
+            return;
         }
 
-        function addMessage(data) {
-            const div = document.createElement("div");
-            const isMine = data.sender_id == current_user_id;
-            div.className = "message " + (isMine ? "sent" : "received");
-            div.setAttribute("data-id", data.message_id);
+        ws.send(JSON.stringify({
+            message: msg
+        }));
 
-            let ticks = "";
-            if (isMine) {
-                ticks = `<span class="tick">${data.is_delivered ? "✓✓" : "✓"}</span>`;
+        input.value = "";
+    }
+
+    function addMessage(data) {
+        const div = document.createElement("div");
+        const isMine = data.sender_id == current_user_id;
+
+        div.className = "message " + (isMine ? "sent" : "received");
+        div.setAttribute("data-id", data.message_id);
+
+        let ticks = "";
+        if (isMine) {
+            if (data.is_read) {
+                ticks = `<span class="tick read">✓✓</span>`;
+            } else if (data.is_delivered) {
+                ticks = `<span class="tick">✓✓</span>`;
+            } else {
+                ticks = `<span class="tick">✓</span>`;
             }
-
-            div.innerHTML = `${data.message}<div class="timestamp">${data.timestamp} ${ticks}</div>`;
-            chatBox.appendChild(div);
-            chatBox.scrollTop = chatBox.scrollHeight;
         }
 
-        function markDelivered(messageId) {
-            const msg = document.querySelector(`[data-id='${messageId}']`);
-            if (!msg) return;
-            const tick = msg.querySelector(".tick");
-            if (!tick) return;
-            tick.innerHTML = "✓✓";
-        }
+        div.innerHTML = `
+            ${data.message}
+            <div class="timestamp">
+                ${data.timestamp} ${ticks}
+            </div>
+        `;
 
-        function markRead(messageId) {
-            const msg = document.querySelector(`[data-id='${messageId}']`);
-            if (!msg) return;
-            const tick = msg.querySelector(".tick");
-            if (!tick) return;
-            tick.innerHTML = "✓✓";
-            tick.classList.add("read");
-        }
-    </script>
+        chatBox.appendChild(div);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function markDelivered(messageId) {
+        const msg = document.querySelector(`[data-id='${messageId}']`);
+        if (!msg) return;
+
+        const tick = msg.querySelector(".tick");
+        if (!tick) return;
+
+        tick.innerHTML = "✓✓";
+    }
+
+    function markRead(messageId) {
+        const msg = document.querySelector(`[data-id='${messageId}']`);
+        if (!msg) return;
+
+        const tick = msg.querySelector(".tick");
+        if (!tick) return;
+
+        tick.innerHTML = "✓✓";
+        tick.classList.add("read");
+    }
+</script>
 </body>
 </html>
